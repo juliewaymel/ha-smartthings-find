@@ -1,7 +1,8 @@
 MIT License
 
 Copyright (c) 2024 Benedikt Frey (original work "HA-SmartThings-Find")
-Copyright (c) 2026 Julie Waymel (modernized fork)
+Copyright (c) 2024-2026 PixelShober / tomskra (OAuth 2.0 PKCE implementation)
+Copyright (c) 2026 Julie Waymel (fork)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

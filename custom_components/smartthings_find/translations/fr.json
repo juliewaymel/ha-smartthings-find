@@ -1,47 +1,35 @@
 {
   "config": {
-    "step": {
-      "reauth_confirm": {
-        "title": "Ré-authentifier SmartThings Find",
-        "description": "Votre session a expiré. Cliquez sur Valider pour vous reconnecter via un QR code."
-      },
-      "finish": {
-        "title": "SmartThings Find"
-      }
-    },
-    "progress": {
-      "task_stage_one": "Préparation, veuillez patienter...",
-      "task_stage_two": "Pour vous connecter, scannez le QR code suivant avec votre appareil Galaxy. Vous pouvez aussi vous connecter depuis ce navigateur en cliquant [ici]({url}).\n\n![QR Code](data:image/png;base64,{qr_code})\n\nImpossible de scanner le code ? Rendez-vous sur [signin.samsung.com/key](https://signin.samsung.com/key/) et saisissez le code suivant :\n\n## ```{code}```\n"
-    },
-    "error": {
-      "stage_one_failed": "Échec de l'étape 1 de connexion. Consultez les journaux pour plus de détails.",
-      "stage_two_failed": "Échec de l'étape 2 de connexion (QR code non scanné à temps ?). Consultez les journaux."
-    },
     "abort": {
       "reauth_successful": "Ré-authentification réussie."
+    },
+    "step": {
+      "user": {
+        "title": "Connexion SmartThings Find",
+        "description": "Initialisation de la connexion..."
+      },
+      "auth_code": {
+        "title": "Connexion SmartThings Find",
+        "description": "Cliquez [ici]({login_url}) pour vous connecter. \n\nAprès la connexion, copiez l'URL complète commençant par ms-app:// vers laquelle vous êtes redirigé·e (même si elle affiche une erreur) et collez-la ci-dessous. Ne collez pas l'URL de la page d'erreur visible. Si le navigateur propose d'ouvrir une application externe pour le lien ms-app, annulez.\n\nComment obtenir l'URL ms-app :\n1) Gardez l'onglet du navigateur ouvert après la connexion.\n2) Ouvrez les outils de développement (F12) puis l'onglet Réseau ou Console.\n3) Repérez une URL commençant par ms-app:// et copiez-la en entier.",
+        "data": {
+          "redirect_url": "URL de redirection"
+        }
+      }
+    },
+    "error": {
+      "login_error": "Échec de l'initialisation : {error_msg}",
+      "auth_failed": "Échec de l'authentification. Vérifiez l'URL et réessayez."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Options SmartThings Find",
+        "description": "Configurez l'intervalle d'interrogation et les options du mode actif.",
         "data": {
           "update_interval": "Intervalle de mise à jour (secondes)",
-          "active_mode_smarttags": "Mode actif pour les SmartTags (peut augmenter leur consommation de batterie)",
+          "active_mode_smarttags": "Mode actif pour les SmartTags. Peut augmenter la consommation de batterie.",
           "active_mode_others": "Mode actif pour les autres appareils (téléphones, montres...). Augmente fortement la consommation de batterie."
         }
-      }
-    }
-  },
-  "entity": {
-    "sensor": {
-      "battery": {
-        "name": "Batterie"
-      }
-    },
-    "button": {
-      "ring": {
-        "name": "Faire sonner"
       }
     }
   }

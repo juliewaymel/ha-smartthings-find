@@ -1,37 +1,44 @@
 # SmartThings Find pour Home Assistant
 
 Intégration personnalisée (custom component) permettant de **localiser** et de
-**faire sonner** vos appareils Samsung Galaxy — téléphones, montres, écouteurs
-et **SmartTags** — depuis Home Assistant, via le service **SmartThings Find**.
+**faire sonner** vos appareils Samsung Galaxy et **SmartTags** depuis Home
+Assistant, via le service **SmartThings Find**.
 
-C'est un fork modernisé et maintenu de l'excellent travail de reverse-engineering
-de [`Vedeneb/HA-SmartThings-Find`](https://github.com/Vedeneb/HA-SmartThings-Find)
-(archivé). La mécanique d'authentification et les endpoints sont repris
-fidèlement ; le code a été mis à jour pour les API Home Assistant récentes.
+Cette version utilise une authentification **OAuth 2.0 avec PKCE** (comme les
+applications officielles Samsung) : une **connexion navigateur unique**, puis une
+session **persistante qui se renouvelle automatiquement**. Plus de re-connexion
+régulière ni d'expiration imprévisible.
+
+C'est un fork de la lignée
+[`Vedeneb`](https://github.com/Vedeneb/HA-SmartThings-Find) (archivé) →
+[`tomskra`](https://github.com/tomskra/HA-SmartThings-Find) →
+[`PixelShober`](https://github.com/PixelShober/HA-SmartThings-Find), dont provient
+l'implémentation OAuth reprise ici.
 
 > ⚠️ **Avertissement — intégration NON officielle.**
-> Elle s'appuie sur le **reverse-engineering** de l'API privée SmartThings Find
-> de Samsung. Il n'existe aucune API publique. **Samsung peut modifier ou casser
-> cette API à tout moment, sans préavis**, ce qui rendrait l'intégration
-> inopérante. Utilisez-la à vos risques. Elle n'est ni affiliée ni approuvée par
-> Samsung.
+> Elle s'appuie sur le **reverse-engineering** de l'API privée de Samsung. Il
+> n'existe aucune API publique pour la localisation SmartThings Find. **Samsung
+> peut modifier ou casser cette API à tout moment, sans préavis.** Utilisez-la à
+> vos risques. Elle n'est ni affiliée ni approuvée par Samsung.
 
 ## Fonctionnalités
 
-Pour chaque appareil de votre compte SmartThings Find, l'intégration crée :
+Pour chaque appareil compatible de votre compte SmartThings Find, l'intégration
+crée :
 
 - un **`device_tracker`** — position GPS (latitude, longitude, précision) ;
-- un **`sensor`** de **batterie** (sauf pour les écouteurs) ;
-- un **`button`** « **Faire sonner** » (déclenche la sonnerie de l'appareil).
+- un **`sensor`** de **batterie** (selon l'appareil) ;
+- un **`switch`** « **Faire sonner** » (déclenche/arrête la sonnerie).
 
-Les écouteurs de type « CANAL2 » (Galaxy Buds) exposent en plus un tracker par
-oreillette (gauche / droite).
+Le périmètre exact des appareils exposés dépend de ce que le backend SmartThings
+Find renvoie pour votre compte.
 
 ## Prérequis
 
 - Home Assistant **2024.12** ou plus récent.
 - Un compte **Samsung** avec au moins un appareil enregistré dans SmartThings
-  Find, et un appareil Galaxy pour scanner le QR code de connexion.
+  Find.
+- Un **navigateur** pour effectuer la connexion initiale (une seule fois).
 - Pour la sonnerie : un appareil Galaxy à proximité connecté en **Bluetooth**
   (contrainte de l'API Samsung).
 
@@ -49,22 +56,25 @@ oreillette (gauche / droite).
 Copiez le dossier `custom_components/smartthings_find/` dans le répertoire
 `config/custom_components/` de votre Home Assistant, puis redémarrez.
 
-## Configuration (authentification par QR code)
+## Configuration (connexion OAuth)
 
 1. **Paramètres → Appareils et services → Ajouter une intégration →
-   SmartThings Find**.
-2. Un **QR code** s'affiche. Deux options :
-   - le **scanner** avec l'appareil photo / SmartThings de votre Galaxy ;
-   - ou ouvrir le lien fourni, ou saisir le code sur
-     [signin.samsung.com/key](https://signin.samsung.com/key/).
-3. Validez la connexion sur votre téléphone. L'intégration récupère alors un
-   cookie de session (`JSESSIONID`) et charge vos appareils.
+   SmartThings Find** (à ne pas confondre avec l'intégration SmartThings native).
+2. **Connexion** : cliquez sur le lien fourni pour vous connecter à votre compte
+   Samsung dans le navigateur.
+3. **Redirection** : après la connexion, le navigateur tente d'ouvrir un lien
+   `ms-app://…`. Annulez l'éventuelle invite d'ouverture d'application externe.
+4. **Récupérez l'URL `ms-app://`** : ouvrez les outils de développement (**F12**),
+   onglet **Réseau** ou **Console**, et copiez l'URL **complète** commençant par
+   `ms-app://` (⚠️ pas l'URL de la page d'erreur visible).
+5. **Collez** cette URL dans le dialogue Home Assistant. L'intégration échange le
+   code contre des jetons et charge vos appareils.
 
-### Durée de session / ré-authentification
+### Session / ré-authentification
 
-La durée exacte de validité de la session **n'est pas connue** : elle peut
-expirer de façon imprévisible. Le cas échéant, Home Assistant déclenche
-automatiquement un flux de **ré-authentification** (nouveau scan de QR code).
+La session OAuth se **renouvelle automatiquement** grâce à un jeton de
+rafraîchissement (`offline.access`). En cas de révocation côté Samsung, Home
+Assistant déclenche un flux de **ré-authentification** (même procédure).
 
 ## Options
 
@@ -83,8 +93,9 @@ l'appareil. En **mode actif**, elle demande une position fraîche à chaque cycl
 
 - API reverse-engineered → **susceptible de casser** si Samsung change son service.
 - La sonnerie nécessite un appareil Galaxy à proximité, connecté en Bluetooth.
-- **Impossible d'arrêter** la sonnerie d'un SmartTag (limitation de l'API).
-- Les localisations **chiffrées** (souvent `OFFLINE_LOC`) sont ignorées.
+- L'état du `switch` de sonnerie est **optimiste** : l'API OAuth ne permet pas de
+  relire l'état réel de la sonnerie.
+- L'arrêt de sonnerie n'est pas garanti sur tous les appareils (dépend du backend).
 
 ## Dépannage
 
@@ -99,6 +110,10 @@ logger:
 
 ## Crédits & licence
 
-- Travail original : **Benedikt Frey** — [`Vedeneb/HA-SmartThings-Find`](https://github.com/Vedeneb/HA-SmartThings-Find).
-- Fork modernisé : **Julie Waymel**.
+- Travail original de reverse-engineering : **Benedikt Frey** —
+  [`Vedeneb/HA-SmartThings-Find`](https://github.com/Vedeneb/HA-SmartThings-Find).
+- Implémentation OAuth 2.0 / PKCE :
+  [`PixelShober/HA-SmartThings-Find`](https://github.com/PixelShober/HA-SmartThings-Find)
+  (via [`tomskra`](https://github.com/tomskra/HA-SmartThings-Find)).
+- Fork : **Julie Waymel**.
 - Licence : **MIT** (voir [`LICENSE`](LICENSE)).

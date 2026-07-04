@@ -1,125 +1,105 @@
-"""Suivi de position (device_tracker) pour SmartThings Find."""
-
-from __future__ import annotations
-
 import logging
-
-from homeassistant.components.device_tracker import SourceType, TrackerEntity
+from homeassistant.components.device_tracker.config_entry import TrackerEntity as DeviceTrackerEntity
+from homeassistant.components.device_tracker.const import SourceType
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .api import get_battery_level, get_sub_location
-from .const import SUBTYPE_EARBUDS
-from .coordinator import STFConfigEntry, SmartThingsFindCoordinator
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-
-async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: STFConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    """Crée les entités device_tracker."""
-    coordinator = entry.runtime_data
-    entities: list[SmartThingsDeviceTracker] = []
-    for device in coordinator.devices:
-        data = device["data"]
-        # Écouteurs (CANAL2) : une entité par oreillette + une entité globale
-        if data.get("subType") == SUBTYPE_EARBUDS:
-            entities.append(SmartThingsDeviceTracker(coordinator, device, "left"))
-            entities.append(SmartThingsDeviceTracker(coordinator, device, "right"))
-        entities.append(SmartThingsDeviceTracker(coordinator, device))
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
+    """Set up SmartThings Find device tracker entities."""
+    devices = hass.data[DOMAIN][entry.entry_id]["devices"]
+    coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    entities = []
+    for device in devices:
+        entities += [SmartThingsDeviceTracker(hass, coordinator, device)]
     async_add_entities(entities)
 
+class SmartThingsDeviceTracker(DeviceTrackerEntity):
+    """Representation of a SmartTag device tracker."""
 
-class SmartThingsDeviceTracker(CoordinatorEntity[SmartThingsFindCoordinator], TrackerEntity):
-    """Suivi de position d'un appareil SmartThings Find."""
+    def __init__(self, hass: HomeAssistant, coordinator, device):
+        """Initialize the device tracker."""
 
-    _attr_has_entity_name = True
+        self.coordinator = coordinator
+        self.hass = hass
+        self.device = device['data']
+        self.device_id = self.device.get("device_id")
 
-    def __init__(
-        self,
-        coordinator: SmartThingsFindCoordinator,
-        device: dict,
-        sub_device_name: str | None = None,
-    ) -> None:
-        """Initialise le tracker."""
-        super().__init__(coordinator)
-        self.device = device["data"]
-        self.device_id = self.device["dvceID"]
-        self.sub_device_name = sub_device_name
+        name = self.device.get("name") or self.device_id or "SmartThings Find"
+        self._attr_unique_id = f"stf_device_tracker_{self.device_id}"
+        self._attr_name = name
+        self._attr_device_info = device['ha_dev_info']
+        self._attr_latitude = None
+        self._attr_longitude = None
 
-        suffix = f"_{sub_device_name}" if sub_device_name else ""
-        self._attr_unique_id = f"stf_device_tracker_{self.device_id}{suffix}"
-        # Entité principale : nom = celui de l'appareil ; oreillettes : "Left"/"Right"
-        self._attr_name = sub_device_name.capitalize() if sub_device_name else None
-        self._attr_device_info = device["ha_dev_info"]
-
-        icons = self.device.get("icons", {})
-        if "coloredIcon" in icons:
-            self._attr_entity_picture = icons["coloredIcon"]
-
-    @property
-    def _tag_data(self) -> dict:
-        """Données de localisation courantes pour cet appareil."""
-        return self.coordinator.data.get(self.device_id) or {}
+        icon_url = self.device.get("icon_url")
+        if icon_url:
+            self._attr_entity_picture = icon_url
+        self.async_update = coordinator.async_add_listener(self.async_write_ha_state)
+    
+    def async_write_ha_state(self):
+        if not self.enabled:
+            _LOGGER.debug(f"Ignoring state write request for disabled entity '{self.entity_id}'")
+            return
+        return super().async_write_ha_state()
 
     @property
     def available(self) -> bool:
-        """Disponible si le dernier rafraîchissement de l'appareil a réussi."""
-        if not super().available:
+        """Return true if the device is available."""
+        tag_data = self.coordinator.data.get(self.device_id, {})
+        if not tag_data:
+            _LOGGER.info(f"tag_data none for '{self.name}'; rendering state unavailable")
             return False
-        tag_data = self._tag_data
-        return bool(tag_data) and tag_data.get("update_success", False)
-
+        if not tag_data.get('update_success'):
+            _LOGGER.info(f"Last update for '{self.name}' failed; rendering state unavailable")
+            return False
+        return True
+    
     @property
-    def source_type(self) -> SourceType:
-        """Type de source de localisation."""
+    def source_type(self) -> str:
         return SourceType.GPS
-
-    def _resolved_loc(self) -> dict:
-        """Retourne le dict de localisation (globale ou sous-appareil)."""
-        tag_data = self._tag_data
-        if self.sub_device_name:
-            _, loc = get_sub_location(tag_data.get("ops", []), self.sub_device_name)
-            return loc or {}
-        if tag_data.get("location_found"):
-            return tag_data.get("used_loc") or {}
-        return {}
+    
+    @property
+    def latitude(self):
+        """Return the latitude of the device."""
+        data = self.coordinator.data.get(self.device_id, {})
+        if data.get('location_found'):
+            return data.get('used_loc', {}).get('latitude', None)
+        return None
 
     @property
-    def latitude(self) -> float | None:
-        """Latitude de l'appareil."""
-        return self._resolved_loc().get("latitude")
+    def longitude(self):
+        """Return the longitude of the device."""
+        data = self.coordinator.data.get(self.device_id, {})
+        if data.get('location_found'):
+            return data.get('used_loc', {}).get('longitude', None)
+        return None
+    
+    @property
+    def location_accuracy(self):
+        """Return the location accuracy of the device."""
+        data = self.coordinator.data.get(self.device_id, {})
+        if data.get('location_found'):
+            return data.get('used_loc', {}).get('gps_accuracy', None)
+        return None
 
     @property
-    def longitude(self) -> float | None:
-        """Longitude de l'appareil."""
-        return self._resolved_loc().get("longitude")
-
+    def battery_level(self):
+        """Return the battery level of the device."""
+        data = self.coordinator.data.get(self.device_id, {})
+        return data.get('battery_level')
+    
     @property
-    def location_accuracy(self) -> float | None:
-        """Précision GPS."""
-        return self._resolved_loc().get("gps_accuracy") or 0
-
-    @property
-    def battery_level(self) -> int | None:
-        """Niveau de batterie (non pertinent pour les sous-appareils)."""
-        if self.sub_device_name:
-            return None
-        return get_battery_level(self.name or self.device_id, self._tag_data.get("ops", []))
-
-    @property
-    def extra_state_attributes(self) -> dict:
-        """Attributs supplémentaires (dont la date de dernière position)."""
-        tag_data = dict(self._tag_data)
-        if self.sub_device_name:
-            used_op, used_loc = get_sub_location(
-                tag_data.get("ops", []), self.sub_device_name
-            )
-            tag_data = tag_data | used_op | used_loc
-        used_loc = tag_data.get("used_loc") or {}
-        tag_data["last_seen"] = used_loc.get("gps_date")
-        return tag_data | self.device
+    def extra_state_attributes(self):
+        tag_data = self.coordinator.data.get(self.device_id, {}) or {}
+        device_data = self.device or {}
+        used_loc = tag_data.get('used_loc') or {}
+        attrs = {}
+        attrs.update(device_data)
+        attrs.update(tag_data)
+        attrs['last_seen'] = used_loc.get('gps_date')
+        return attrs

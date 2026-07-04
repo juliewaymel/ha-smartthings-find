@@ -1,72 +1,62 @@
-"""Capteur de batterie pour SmartThings Find."""
-
-from __future__ import annotations
-
 import logging
-
-from homeassistant.components.sensor import (
-    SensorDeviceClass,
-    SensorEntity,
-    SensorStateClass,
-)
-from homeassistant.const import PERCENTAGE
+from homeassistant.components.sensor import SensorEntity
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 
-from .api import get_battery_level
-from .coordinator import STFConfigEntry, SmartThingsFindCoordinator
-
+from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: STFConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    """Crée les capteurs de batterie."""
-    coordinator = entry.runtime_data
-    async_add_entities(
-        DeviceBatterySensor(coordinator, device) for device in coordinator.devices
-    )
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
+    """Set up SmartThings Find sensor entities."""
+    devices = hass.data[DOMAIN][entry.entry_id]["devices"]
+    coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    entities = []
+    for device in devices:
+        entities += [DeviceBatterySensor(hass, coordinator, device)]
+    async_add_entities(entities)
 
 
-class DeviceBatterySensor(
-    CoordinatorEntity[SmartThingsFindCoordinator], SensorEntity
-):
-    """Capteur de niveau de batterie d'un appareil."""
+class DeviceBatterySensor(SensorEntity):
+    """Representation of a Device battery sensor."""
 
-    _attr_has_entity_name = True
-    _attr_translation_key = "battery"
-    _attr_device_class = SensorDeviceClass.BATTERY
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = PERCENTAGE
-
-    def __init__(
-        self, coordinator: SmartThingsFindCoordinator, device: dict
-    ) -> None:
-        """Initialise le capteur."""
-        super().__init__(coordinator)
-        self.device = device["data"]
-        self.device_id = self.device["dvceID"]
-        self._attr_unique_id = f"stf_device_battery_{self.device_id}"
-        self._attr_device_info = device["ha_dev_info"]
-
-    @property
-    def _tag_data(self) -> dict:
-        """Données courantes pour cet appareil."""
-        return self.coordinator.data.get(self.device_id) or {}
+    def __init__(self, hass: HomeAssistant, coordinator, device):
+        """Initialize the sensor."""
+        self.coordinator = coordinator
+        device_id = device['data'].get("device_id")
+        name = device['data'].get("name") or device_id or "SmartThings Find"
+        self._attr_unique_id = f"stf_device_battery_{device_id}"
+        self._attr_name = f"{name} Battery"
+        self._state = None
+        self.hass = hass
+        self.device = device['data']
+        self.device_id = device_id
+        self._attr_device_info = device['ha_dev_info']
+        self._attr_device_class = SensorDeviceClass.BATTERY
+        self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
     def available(self) -> bool:
-        """Disponible si le dernier rafraîchissement a réussi."""
-        if not super().available:
+        """
+        Makes the entity show unavailable state if no data was received
+        or there was an error during last update
+        """
+        tag_data = self.coordinator.data.get(self.device_id, {})
+        if not tag_data:
+            _LOGGER.info(f"battery sensor: tag_data none for '{self.name}'; rendering state unavailable")
             return False
-        tag_data = self._tag_data
-        return bool(tag_data) and tag_data.get("update_success", False)
-
+        if not tag_data.get('update_success'):
+            _LOGGER.info(f"Last update for battery sensor '{self.name}' failed; rendering state unavailable")
+            return False
+        return True
+    
     @property
-    def native_value(self) -> int | None:
-        """Niveau de batterie courant."""
-        return get_battery_level(self.device_id, self._tag_data.get("ops", []))
+    def unit_of_measurement(self) -> str:
+        return '%'
+    
+    @property
+    def state(self):
+        data = self.coordinator.data.get(self.device_id, {})
+        return data.get('battery_level')
