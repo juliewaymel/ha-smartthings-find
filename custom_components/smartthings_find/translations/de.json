@@ -10,7 +10,7 @@
       },
       "auth_code": {
         "title": "SmartThings Find Login",
-        "description": "Bitte klicke [hier]({login_url}) um dich anzumelden.\n\nNach der Anmeldung kopiere bitte die volle ms-app:// URL (auch wenn die Seite einen Fehler anzeigt) und f\u00fcge sie unten ein. Nicht die sichtbare Fehlerseiten-URL einf\u00fcgen. Wenn der Browser fragt, eine externe App f\u00fcr den ms-app Link zu \u00f6ffnen, bitte abbrechen.\n\nSo findest du die ms-app URL:\n1) Browser-Tab nach dem Login offen lassen.\n2) Developer Tools (F12) \u00f6ffnen und Network oder Console ansehen.\n3) Eine URL die mit ms-app:// beginnt komplett kopieren.",
+        "description": "Klicke [hier]({login_url}), um dich bei deinem Samsung-Konto anzumelden.\n\nNach der Anmeldung wird der Browser zu einer **ms-app://\u2026**-URL weitergeleitet (eine normale Fehlerseite). So erh\u00e4ltst du diese URL:\n\n1) \u00d6ffne die Entwicklertools (**F12**) \u2192 Tab **Netzwerk**.\n2) Aktiviere **Protokoll beibehalten** (Preserve log).\n3) Melde dich an. Suche in der Liste den Eintrag, der mit **ms-app** beginnt (meist rot).\n4) Rechtsklick darauf \u2192 **Kopieren** \u2192 **URL kopieren**.\n5) F\u00fcge die vollst\u00e4ndige URL unten ein.\n\n\ud83d\udca1 Tipp: Im README gibt es ein kleines Console-Skript, das die URL automatisch kopiert.",
         "data": {
           "redirect_url": "Weiterleitungs-URL"
         }

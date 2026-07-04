@@ -10,7 +10,7 @@
       },
       "auth_code": {
         "title": "Connexion SmartThings Find",
-        "description": "Cliquez [ici]({login_url}) pour vous connecter. \n\nAprès la connexion, copiez l'URL complète commençant par ms-app:// vers laquelle vous êtes redirigé·e (même si elle affiche une erreur) et collez-la ci-dessous. Ne collez pas l'URL de la page d'erreur visible. Si le navigateur propose d'ouvrir une application externe pour le lien ms-app, annulez.\n\nComment obtenir l'URL ms-app :\n1) Gardez l'onglet du navigateur ouvert après la connexion.\n2) Ouvrez les outils de développement (F12) puis l'onglet Réseau ou Console.\n3) Repérez une URL commençant par ms-app:// et copiez-la en entier.",
+        "description": "Cliquez [ici]({login_url}) pour vous connecter à votre compte Samsung.\n\nAprès la connexion, le navigateur est redirigé vers une URL **ms-app://…** (une page d'erreur normale). Récupérez cette URL :\n\n1) Ouvrez les outils de développement (**F12**) → onglet **Réseau**.\n2) Cochez **Conserver le journal** (Preserve log).\n3) Connectez-vous. Dans la liste des requêtes, repérez la ligne commençant par **ms-app** (souvent en rouge).\n4) Clic droit dessus → **Copier** → **Copier l'URL**.\n5) Collez l'URL complète ci-dessous.\n\n💡 Astuce : le README fournit un petit script à coller dans la Console qui copie l'URL automatiquement.",
         "data": {
           "redirect_url": "URL de redirection"
         }

@@ -70,6 +70,59 @@ Copiez le dossier `custom_components/smartthings_find/` dans le répertoire
 5. **Collez** cette URL dans le dialogue Home Assistant. L'intégration échange le
    code contre des jetons et charge vos appareils.
 
+### Récupérer l'URL `ms-app://` — méthode fiable (onglet Réseau)
+
+C'est la méthode qui marche à tous les coups :
+
+1. Avant de cliquer sur le lien, ouvrez les outils de développement (**F12**) →
+   onglet **Réseau** (Network).
+2. Cochez **Conserver le journal** (Preserve log).
+3. Connectez-vous à votre compte Samsung.
+4. Dans la liste des requêtes, repérez la ligne commençant par **`ms-app`**
+   (souvent affichée en rouge / échouée).
+5. **Clic droit** dessus → **Copier** → **Copier l'URL** (Copy → Copy URL).
+6. Collez l'URL complète dans le dialogue Home Assistant.
+
+> ⚠️ Ne collez **pas** l'URL de la page d'erreur visible dans la barre d'adresse :
+> elle ne contient pas les paramètres nécessaires. Seule l'entrée `ms-app://…` du
+> journal Réseau est la bonne.
+
+### Astuce : copier l'URL `ms-app://` automatiquement (Console)
+
+Si la redirection est pilotée en JavaScript (cas fréquent), ce petit script copie
+l'URL tout seul. **Collez-le dans la Console (F12 → Console) _avant_ de cliquer sur
+le lien de connexion**, puis connectez-vous :
+
+```js
+(() => {
+  const grab = (u) => {
+    u = String(u || "");
+    if (!u.startsWith("ms-app://")) return false;
+    navigator.clipboard.writeText(u).catch(() => {});
+    console.log("%cURL ms-app copiée :\n" + u, "color:green;font-size:16px");
+    alert("URL ms-app copiée dans le presse-papier !\n\n" + u);
+    return true;
+  };
+  const L = Location.prototype, assign = L.assign, replace = L.replace;
+  L.assign = function (u) { if (grab(u)) return; return assign.apply(this, arguments); };
+  L.replace = function (u) { if (grab(u)) return; return replace.apply(this, arguments); };
+  try {
+    const d = Object.getOwnPropertyDescriptor(L, "href");
+    Object.defineProperty(location, "href", {
+      get() { return d.get.call(location); },
+      set(u) { if (grab(u)) return; d.set.call(location, u); },
+    });
+  } catch (e) {}
+  const open = window.open;
+  window.open = function (u) { if (grab(u)) return null; return open.apply(this, arguments); };
+  console.log("%cInterception ms-app active — connecte-toi maintenant.", "color:#06c;font-size:14px");
+})();
+```
+
+L'URL est copiée dans le presse-papier **et** affichée (alerte + Console). Si la
+connexion traverse plusieurs pages complètes, le script peut être réinitialisé :
+dans ce cas, utilisez la **méthode Réseau** ci-dessus (toujours fiable).
+
 ### Session / ré-authentification
 
 La session OAuth se **renouvelle automatiquement** grâce à un jeton de
