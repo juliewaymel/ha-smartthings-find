@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "reauth_confirm": {
+        "title": "Reauthenticate SmartThings Find",
+        "description": "Your session has expired. Click Submit to log in again with a QR code."
+      },
+      "finish": {
+        "title": "SmartThings Find"
+      }
+    },
+    "progress": {
+      "task_stage_one": "Preparing, please wait...",
+      "task_stage_two": "To log in, scan the following QR code with your Galaxy device. You can also log in from this browser by clicking [here]({url}).\n\n![QR Code](data:image/png;base64,{qr_code})\n\nUnable to scan the code? Go to [signin.samsung.com/key](https://signin.samsung.com/key/) and enter the following code:\n\n## ```{code}```\n"
+    },
+    "error": {
+      "stage_one_failed": "Login stage 1 failed. Check the logs for details.",
+      "stage_two_failed": "Login stage 2 failed (QR code not scanned in time?). Check the logs for details."
+    },
+    "abort": {
+      "reauth_successful": "Reauthentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SmartThings Find options",
+        "data": {
+          "update_interval": "Update interval (seconds)",
+          "active_mode_smarttags": "Active mode for SmartTags (may increase their battery consumption)",
+          "active_mode_others": "Active mode for other devices (phones, watches, ...). Will heavily increase battery consumption."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery": {
+        "name": "Battery"
+      }
+    },
+    "button": {
+      "ring": {
+        "name": "Ring"
+      }
+    }
+  }
+}

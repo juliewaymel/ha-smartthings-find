@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "reauth_confirm": {
+        "title": "SmartThings Find erneut authentifizieren",
+        "description": "Deine Sitzung ist abgelaufen. Klicke auf Absenden, um dich erneut per QR-Code anzumelden."
+      },
+      "finish": {
+        "title": "SmartThings Find"
+      }
+    },
+    "progress": {
+      "task_stage_one": "Wird vorbereitet, bitte warten...",
+      "task_stage_two": "Scanne zum Anmelden den folgenden QR-Code mit deinem Galaxy-Gerät. Du kannst dich auch in diesem Browser anmelden, indem du [hier]({url}) klickst.\n\n![QR Code](data:image/png;base64,{qr_code})\n\nCode kann nicht gescannt werden? Gehe zu [signin.samsung.com/key](https://signin.samsung.com/key/) und gib den folgenden Code ein:\n\n## ```{code}```\n"
+    },
+    "error": {
+      "stage_one_failed": "Anmeldung Schritt 1 fehlgeschlagen. Details siehe Logs.",
+      "stage_two_failed": "Anmeldung Schritt 2 fehlgeschlagen (QR-Code nicht rechtzeitig gescannt?). Details siehe Logs."
+    },
+    "abort": {
+      "reauth_successful": "Erneute Authentifizierung erfolgreich."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SmartThings Find Optionen",
+        "data": {
+          "update_interval": "Aktualisierungsintervall (Sekunden)",
+          "active_mode_smarttags": "Aktiver Modus für SmartTags (kann den Akkuverbrauch erhöhen)",
+          "active_mode_others": "Aktiver Modus für andere Geräte (Handys, Uhren, ...). Erhöht den Akkuverbrauch stark."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery": {
+        "name": "Akku"
+      }
+    },
+    "button": {
+      "ring": {
+        "name": "Klingeln"
+      }
+    }
+  }
+}

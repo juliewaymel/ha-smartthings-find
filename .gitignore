@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Tests / couverture
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Outils / IDE
+.vscode/
+.idea/
+.venv/
+venv/
+
+# Home Assistant (config de test locale)
+config/*
+!config/configuration.yaml
+
+# Réponses JSON de test / debug
+test_data/
+
+# Divers
+*.log
+.DS_Store

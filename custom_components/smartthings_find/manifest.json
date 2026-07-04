@@ -1,0 +1,14 @@
+{
+  "domain": "smartthings_find",
+  "name": "SmartThings Find",
+  "version": "0.3.0",
+  "documentation": "https://github.com/juliewaymel/ha-smartthings-find",
+  "issue_tracker": "https://github.com/juliewaymel/ha-smartthings-find/issues",
+  "codeowners": ["@juliewaymel"],
+  "config_flow": true,
+  "dependencies": [],
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "loggers": ["custom_components.smartthings_find"],
+  "requirements": ["qrcode[pil]==7.4.2"]
+}
